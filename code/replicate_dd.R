@@ -12,6 +12,7 @@ library(readxl)
 library(ggplot2)
 library(magrittr)
 library(fuzzyjoin)
+library(janitor)
 
 #### define paths ####
 user <- Sys.getenv("USERNAME")
@@ -21,4 +22,16 @@ dataraw <- paste(main, "dataraw", sep = "/")
 dataout <- paste(main, "dataout", sep = "/")
 temp <- paste(main, "temp", sep = "/")
 
-# 
+#### read data files ####
+df <- paste(dataraw,
+             "ForestsAndFinance Agriculture.csv",
+             sep = "/") %>%
+  read_delim() %>%
+  clean_names()
+
+# replicate hsbc figure
+hsbc <- df %>%
+  filter(year %in% seq(2016, 2020, 1),
+         bank == "HSBC") %>%
+  group_by(group) %>%
+  summarize(total = sum(amount_usd_millions))
