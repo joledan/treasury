@@ -109,6 +109,7 @@ After keeping only UK-based FIs:
 
 ```{r}
 #| echo: false
+#| paged.print: FALSE
 
 dd1 <- dd %>%
   select(investor_parent) %>%
@@ -135,6 +136,7 @@ combined1 <- dd1 %>%
 count_dd_bank <- sum(combined1$in_deforestation_dividends)
 count_ff_bank <- sum(combined1$in_forests_finance) 
 count_both_bank <- sum(combined1$in_both)
+
 
 combined1 
 ```
