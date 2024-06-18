@@ -9,7 +9,11 @@ editor: visual
 # Purpose
 
 This document compares data sets from the Deforestation Dividends report (2021)
-and the Forests and Finance. 
+and the Forests and Finance. In particular, we want to understand:
+
+* How the values compare between the two data sets
+* Coverage of financial institutions (FIs) between the two data sets
+* Types of finance covered in both data sets
 
 ## Running Code
 
