@@ -4,16 +4,118 @@ date: today
 date-format: full
 format: html
 editor: visual
+project:
+  execute-dir: ../reports
+  output-dir: ../reports
 ---
 
 # Purpose
 
-This document compares data sets from the Deforestation Dividends report (2021)
-and the Forests and Finance. In particular, we want to understand:
+This document compares data sets from the [Deforestation Dividends](https://www.globalwitness.org/en/campaigns/forests/deforestation-dividends/) report (DD, 2021) and [Forests and Finance](https://forestsandfinance.org/data/). In particular, we want to understand:
 
-* How the values compare between the two data sets
-* Coverage of financial institutions (FIs) between the two data sets
-* Types of finance covered in both data sets
+-   How the values compare between the two data sets
+-   Coverage of financial institutions (FIs) between the two data sets
+-   Types of finance covered in both data sets
+
+## About the data sets
+
+### Deforestation Dividends
+
+The data used in the DD report come from an internal data project (provided by a colleague who worked on the report). As of Tuesday June 18, 2024, we have not received any information from Profundo regarding the details of the data or methodologies used to construct the data. Much of this analysis is based on 1) the previous code and data files provided internally and 2) deducing from the methodology provided by [FF](https://forestsandfinance.org/wp-content/uploads/2023/12/Forests-Finance-financial-research-methodology-231211.pdf).
+
+This data set was used to construct the values cited and visuals in the DD report, published by Global Witness in 2021.
+
+This data contains over 70,000 deals made by 20 agribusiness firms linked to deforestation and all the FIs associated with them (headquartered in the EU, UK, US, and China) from 2016-2020. \[DD data might be less than FF bc there's only 20 business duh\]
+
+\[one check to do - isolate to 20 groups that appear in data and check FF for values\]
+
+### Forests and Finance
+
+Forests and Finance covers data from several agribusinesses and financial institutions funding deforestation-related activities. As of June 18, 2024, data is available from 2010 to 2023 (which month?). Data is disaggregated into FIs, types of financing, and forest risk sectors (Beef, Palm Oil, Pulp and Paper, Rubber, Soy, Timber).
+
+For each deal in the FF data, there is a value attributed for each FI to agribusiness groups (measured in millions of USD) which presumably is the amount the FI is providing the agribusiness group.
+
+## Analysis
+
+For the comparisons, we want to focus on UK headquartered FIs.
+
+```{r}
+#| echo: false
+#| warnings: false
+#| include: false
+
+##### install and load packages #####
+rm(list=ls())
+
+# load packages
+library(tidyverse)
+# extract currencies from string
+library(strex)
+library(readxl)
+library(ggplot2)
+library(magrittr)
+library(fuzzyjoin)
+library(janitor)
+
+#### define paths ####
+user <- Sys.getenv("USERNAME")
+# specify project folder
+main <- paste0("C:/Users/", user, "/Documents/Github/treasury")
+dataraw <- paste(main, "dataraw", sep = "/")
+dataout <- paste(main, "dataout", sep = "/")
+temp <- paste(main, "temp", sep = "/")
+```
+
+```{r}
+#| echo: false
+#| warnings: false
+#| include: false
+
+# load dd and ff dfs, keep only UK investors
+dd <- paste(dataraw,
+            "dd_raw.csv",
+            sep = "/") %>%
+  read_delim() %>%
+  clean_names() %>%
+  filter(investor_parent_country == "United Kingdom")
+  
+ff <- paste(dataraw,
+            "ForestsAndFinance Agriculture.csv",
+            sep = "/") %>%
+  read_delim() %>%
+  clean_names()
+
+```
+
+## Comparing coverage
+
+#### How many rows and how many UK-based FIs appear in the data sets?
+
+```{r}
+#| echo: false
+
+count_dd <- dd %>% count()
+count_ff <- ff %>% count()
+
+```
+
+After keeping only UK-based FIs:
+
+* There are `{r} count_dd` rows in the DD data
+* There are `{r} count_ff` rows in the FF data
+* The FF data contains more rows than the DD data
+
+#### Which UK-based FIs appear in the data sets?
+
+```{r}
+#| echo: false
+
+count_dd <- dd %>% count()
+count_ff <- ff %>% count()
+
+```
+
+The FF data seems 
 
 ## Running Code
 
