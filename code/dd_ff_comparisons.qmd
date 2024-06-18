@@ -101,35 +101,63 @@ count_ff <- ff %>% count()
 
 After keeping only UK-based FIs:
 
-* There are `{r} count_dd` rows in the DD data
-* There are `{r} count_ff` rows in the FF data
-* The FF data contains more rows than the DD data
+- There are `{r} count_dd` rows in the DD data
+- There are `{r} count_ff` rows in the FF data
+- The FF data contains more rows than the DD data
 
 #### Which UK-based FIs appear in the data sets?
 
 ```{r}
 #| echo: false
 
-count_dd <- dd %>% count()
-count_ff <- ff %>% count()
+dd1 <- dd %>%
+  select(investor_parent) %>%
+  unique() %>%
+  rename(bank = investor_parent) %>%
+  mutate(in_deforestation_dividends = 1)
 
+ff1 <- ff %>%
+  select(bank) %>%
+  unique() %>%
+  mutate(in_forests_finance = 1)
+
+combined1 <- dd1 %>%
+  full_join(ff1) %>%
+  replace_na(list(
+    in_deforestation_dividends = 0,
+    in_forests_finance = 0
+  )) %>%
+  mutate(in_both = ifelse(in_deforestation_dividends == 1 &
+                            in_forests_finance == 1,
+                          1, 0))
+
+# construct values for text
+count_dd_bank <- sum(combined1$in_deforestation_dividends)
+count_ff_bank <- sum(combined1$in_forests_finance) 
+count_both_bank <- sum(combined1$in_both)
+
+combined1 
 ```
 
-The FF data seems 
+-  The DD data contains `{r} count_dd_bank` unique UK-based FIs
+-  The FF data contains `{r} count_ff_bank` unique UK-based FIs
+-  Over `{r} count_both_bank` unique UK-based FIs appear in both data sets
+  - These include major names like Standard Chartered, HSBC, Natwest, Lloyds Banking Group, Barclays
 
-## Running Code
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+<!-- ## Running Code -->
 
-```{r}
-1 + 1
-```
+<!-- When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this: -->
 
-You can add options to executable code like this
+<!-- ```{r} -->
+<!-- 1 + 1 -->
+<!-- ``` -->
 
-```{r}
-#| echo: false
-2 * 2
-```
+<!-- You can add options to executable code like this -->
 
-The `echo: false` option disables the printing of code (only output is displayed).
+<!-- ```{r} -->
+<!-- #| echo: false -->
+<!-- 2 * 2 -->
+<!-- ``` -->
+
+<!-- The `echo: false` option disables the printing of code (only output is displayed). -->
