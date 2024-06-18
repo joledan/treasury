@@ -23,6 +23,8 @@ dataout <- paste(main, "dataout", sep = "/")
 temp <- paste(main, "temp", sep = "/")
 
 #### read data files ####
+
+## ff data
 df <- paste(dataraw,
              "ForestsAndFinance Agriculture.csv",
              sep = "/") %>%
@@ -31,21 +33,30 @@ df <- paste(dataraw,
 
 #### start check code here ####
 
-df2 <- df %>%
+c <- df %>%
   filter(bank == "HSBC",
-         group == "Olam International",
-         year == 2018) %>%
+         group == "Wilmar",
+         year == 2017) %>%
   group_by(bank, group, year) %>%
   summarise(amount = sum(amount_usd_millions, na.rm = T))
 
 
+## dd data
 df1 <- "C:/Users/JanOledan/Downloads/data (1).csv" %>%
   read_delim() 
 
+b <- df1 %>%
+  filter(investor_parent == "HSBC",
+         group == "Wilmar",
+         year == 2017) %>%
+  group_by(investor_parent, group, year) %>%
+  summarise(amount = sum(per_investor_value_in_mln_us, na.rm = T),
+            value = sum(value, na.rm = T))
+  
 x <- df1 %>%
   filter(investor_parent == "HSBC",
-         group == "Olam International",
-         year == 2018) %>%
+         group == "Wilmar",
+         year == 2017) %>%
   select(investor_parent, group, year, type_of_financing, 
          total_income_us_mln, segment_adjuster, value, 
          per_investor_value_in_mln_us, 
@@ -55,10 +66,9 @@ x <- df1 %>%
          value = per_investor_value_in_mln_us, 
          value_seg = per_investor_value_in_mln_us*segment_adjuster,
          value_shareholdings_q4_2020 = per_investor_value_in_mln_us_shareholdings_q4_2020,
-         value_share_holdings_q4 = per_investor_value_in_mln_us_shareholdings_q4) 
-
-%>%
+         value_share_holdings_q4 = per_investor_value_in_mln_us_shareholdings_q4) %>%
   group_by(investor_parent) %>%
+  unique() %>%
   summarise(total_income = sum(income_seg, na.rm = T),
             total_value = sum(value, na.rm = T),
             total_value_seg = sum(value_seg, na.rm = T),
@@ -68,9 +78,11 @@ x <- df1 %>%
 
 # to-do: how do we replicate the value figure in the document?
 # easily
-# total_value = matches the sum in the bubble plots per FI
-# total_income = sum of income (segment adjusted), matches value in bubble plots per FI
+# total_value = matches the sum in the bubble plots per FI [sum value]
+# total_income = sum of income (segment adjusted), matches value in bubble plots per FI [sum income_seg]
 
+# comparing ff and dd
+# dd = with hsbc 
 # key things to figure out still
 # how do they construct income?
 

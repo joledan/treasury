@@ -1,0 +1,141 @@
+---
+title: "Deforestation Dividends Data Review"
+date: today
+date-format: full
+format: html
+editor: visual
+project:
+  execute-dir: ../reports
+  output-dir: ../reports
+---
+
+# Purpose
+
+This document reviews the data set from the [Deforestation Dividends](https://www.globalwitness.org/en/campaigns/forests/deforestation-dividends/) report (DD, 2021). This work was conducted by Profundo, but the raw data was provided via Ben (through Observable notebooks that contain the data pre-processing, visualizations, and data fact check)
+
+Basically, we want to understand how this data was created and what the variables mean. In particular, we want to see if we can replicate this work (to match the figures in the DD report) and to see if we can construct these variables in-house using Profundo's methodology.
+
+## Brief description of DD data
+
+This data contains over 70,000 deals made by 20 agribusiness firms linked to deforestation and all the FIs associated with them (headquartered in the EU, UK, US, and China) from 2016-2020. This is a key detail to note - it does not cover all possible agribusiness firms!!!
+
+## Questions we want to answer about the data
+
+-   What is the coverage like (e.g. what FIs are covered)
+-   Can we replicate the values in the report using this data?
+-   How are the remaining variables in the data constructed?
+-   What are the relationships between the variables in the data?
+
+### What is in the data?
+
+```{r}
+#| echo: false
+#| warnings: false
+#| include: false
+
+##### install and load packages #####
+rm(list=ls())
+
+# load packages
+library(tidyverse)
+# extract currencies from string
+library(readxl)
+library(ggplot2)
+library(magrittr)
+library(janitor)
+
+#### define paths ####
+user <- Sys.getenv("USERNAME")
+# specify project folder
+main <- paste0("C:/Users/", user, "/Documents/Github/treasury")
+dataraw <- paste(main, "dataraw", sep = "/")
+dataout <- paste(main, "dataout", sep = "/")
+temp <- paste(main, "temp", sep = "/")
+```
+
+```{r}
+#| echo: false
+#| warnings: false
+#| include: false
+
+# load dd data 
+dd <- paste(dataraw,
+            "dd_raw.csv",
+            sep = "/") %>%
+  read_delim() %>%
+  clean_names()
+
+n_vars <- n_distinct(colnames(dd))
+
+# check the type of financing and which ones have maturity dates
+x <- dd %>%
+  select(maturity_date, type_short, type_of_financing) %>%
+  mutate(has_maturity = ifelse(!is.na(maturity_date), 1, 0)) %>%
+  group_by(type_short, type_of_financing) %>%
+  summarise(has_maturity = sum(has_maturity))
+
+```
+
+There are `{r} n_vars` unique variables that appear in the data.
+
+Some identifying variables include:
+
+-   group = contains 20 unique agribusiness covered in the report
+-   year, maturity_date = year the deal was made and the date of maturity
+-   type_of_financing, type_short = type of financing that the agribusiness group/FI used, summarized into 4 categories as Loans, Shareholding, Bondholding, and Underwriting
+    -   there are 6 types of financing: Bondholding, Corporate Loan, Revolving Credit Facility, Shareholding, Bond issuance, and Share issuance. These are the same 6 categories as in FF.
+-   deal_number_deal_id = presumably the unique identifier for the deal (which ideally should be found in Refinitiv, Bloomberg etc.)
+-   manager_name, investor_parent = the FIs involved in the deal
+-   group_sectors, group_regions = the sectors the agribusiness are involved in, as well as the geographic regions
+    -   note, these appear to be the same as the FF data
+
+Some monetary/financial variables include:
+
+- principal_tranche_amount_in_mln_us = ??? 
+- total_package_amount_in_mln_us = ??? 
+- interest_rate_coupon = interest rate charged on the deal 
+- per_investor_value_in_mln_us = value of the deal for each FI involved (assumed, e.g. how much does HSBC specifically get from this deal) 
+- deal_fee_income_us_mln, deal_fee_ratio = the deal fee income received by each FI, the share of the per_investor_value_in_mln_us the FI charges to engage in the deal 
+  - deal_fee_income_us_mln = per_investor_value_in_mln_us x deal_fee_ratio 
+- loan_interest_income = income made from the interest on the loan 
+  - for financing with 1 year of maturity, loan_interest_income = per_investor_value_in_mln_us x interest_rate_coupon/100 
+    - but how do they compute this for the other deals with different maturity?
+-   total_income_us_mln = total income received by the FI from engaging in the deal
+  - total_income_us_mln = deal_fee_income_us_mln + loan_interest_income
+- segment_adjuster = an adjustment made by Profundo to capture only the deforestation-related activities that an agribusiness engages in 
+  - their methodology works through an example on how to construct this [can provide example]
+  - case-by-case basis depending on company reports and data availability
+- value = the total deforestation-adjusted value (maybe income is the more accurate word) of the deal to the FI
+  - value = total_income_us_mln x segment_adjuster
+  
+#### Key relationships in the data set 
+
+- total income made from the deal = money made from the deal fee + money made from the interest accruing on the loan
+  - total_income_us_mln = deal_fee_income_us_mln + loan_interest_income
+- total value (income) of the deal, adjusted to account for deforestation-related activities = segment adjuster (accounting for deforestation-related activites) multiplied by the total income made from the deal
+  - value = total_income_us_mln x segment_adjuster
+
+
+Using these key relationships, we can replicate the values that appear in the visuals in the report.
+
+```{r}
+#| echo: false
+#| warnings: false
+
+companies <- c("HSBC", "BNP Paribas", "Rabobank", 
+               "Deutsche Bank", "JPMorgan Chase", "Bank of China")
+# replicate the deforestation-adjusted income derived in the data
+dd_repl1 <- dd %>%
+  mutate(total_income = total_income_us_mln*segment_adjuster) %>%
+  group_by(investor_parent) %>%
+  summarize(total_income_millions = sum(total_income, na.rm = T)) %>%
+  filter(investor_parent %in% companies)
+
+head(dd_repl1)
+```
+
+#### to-do 
+
+- more relationships in data
+- questions on variables 
+
