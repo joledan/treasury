@@ -29,34 +29,58 @@ df <- paste(dataraw,
   read_delim() %>%
   clean_names()
 
-# replicate hsbc figure
-hsbc <- df %>%
-  filter(year %in% seq(2016, 2020, 1),
-         bank == "HSBC") %>%
-  group_by(group) %>%
-  summarize(total = sum(amount_usd_millions))
+#### start check code here ####
 
+df2 <- df %>%
+  filter(bank == "HSBC",
+         group == "Olam International",
+         year == 2018) %>%
+  group_by(bank, group, year) %>%
+  summarise(amount = sum(amount_usd_millions, na.rm = T))
 
 
 df1 <- "C:/Users/JanOledan/Downloads/data (1).csv" %>%
   read_delim() 
 
 x <- df1 %>%
-  filter(investor_parent == "HSBC") %>%
+  filter(investor_parent == "HSBC",
+         group == "Olam International",
+         year == 2018) %>%
   select(investor_parent, group, year, type_of_financing, 
          total_income_us_mln, segment_adjuster, value, 
          per_investor_value_in_mln_us, 
          per_investor_value_in_mln_us_shareholdings_q4,
          per_investor_value_in_mln_us_shareholdings_q4_2020) %>%
   mutate(income_seg = total_income_us_mln*segment_adjuster,
+         value = per_investor_value_in_mln_us, 
          value_seg = per_investor_value_in_mln_us*segment_adjuster,
-         value_shareholdings_q4_2020 = per_investor_value_in_mln_us_shareholdings_q4_2020*segment_adjuster) %>%
+         value_shareholdings_q4_2020 = per_investor_value_in_mln_us_shareholdings_q4_2020,
+         value_share_holdings_q4 = per_investor_value_in_mln_us_shareholdings_q4) 
+
+%>%
   group_by(investor_parent) %>%
   summarise(total_income = sum(income_seg, na.rm = T),
-            total_value = sum(value_seg, na.rm = T),
-            total_value1 = sum(value_shareholdings_q4_2020, na.rm = T))
+            total_value = sum(value, na.rm = T),
+            total_value_seg = sum(value_seg, na.rm = T),
+            total_value_q4 = sum(value_share_holdings_q4, na.rm = T),
+            total_value_q4_2020 = sum(value_shareholdings_q4_2020, na.rm = T))
 
 
+# to-do: how do we replicate the value figure in the document?
+# easily
+# total_value = matches the sum in the bubble plots per FI
+# total_income = sum of income (segment adjusted), matches value in bubble plots per FI
+
+# key things to figure out still
+# how do they construct income?
+
+### we can construct total income from the variables in the data ###
+# but need to know HOW they constructed the vars in the data
+# also, how did they attribute per investor value?
+
+# total income = deal fee + loan interest income
+# how do they find the deal fee?
+# and how do they get the loan interest income?
 
 
 # IndoSukMak-2016-6 = 1 year maturity
@@ -64,6 +88,8 @@ x <- df1 %>%
 z <- df1 %>%
   select(deal_number_deal_id,
          year:years_to_maturity,
+         type_of_financing,
+         months_to_maturity,
          ends_with("in_mln_us"),
          starts_with("deal_fee"),
          interest_rate_coupon,
@@ -79,3 +105,44 @@ z <- df1 %>%
 x <- df1 %>%   filter(deal_number_deal_id == "3453464116
 ") %>%
   mutate(income_seg = total_income_us_mln*segment_adjuster)
+
+# total income = deal fee + loan interest income
+# how do they find the deal fee?
+# but how do they get the loan interest income?
+
+
+
+record <- z %>%
+  filter(row_number() == 1)
+amortise_loans <- function(record) {
+  
+  
+  y <- record$year
+  t <- record$type_of_financing
+  m <- record$months_to_maturity
+  v <- record$total_income_us_mln
+  
+  if (!t %in% c("Revolving credit facility", "Corporate loan")) return(record)
+  
+  ys <- max(m / 12, 1)
+  c <- ceiling(ys)
+  r <- ys %% 1
+  
+  a <- rep(v / ys, c)
+  if (r > 0) {
+    a[c] <- a[c] * r
+  }
+  
+  result <- lapply(1:c, function(i) {
+    record$year <- y + (i - 1)
+    record$original_year <- y
+    record$total_income_us_mln <- a[i]
+    return(record)
+  })
+  
+  return(result)
+}
+
+y <- amortise_loans(record)
+
+
