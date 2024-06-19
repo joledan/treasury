@@ -69,17 +69,35 @@ ff_uk <- ff %>%
   group_by(type_short) %>%
   summarise(total = sum(amount_usd_millions, na.rm = T))
 
+x <- ff %>% filter(region == "Europe other")
+
+table(x$country)
 
 #### general questions/questions for ward ####
 # why are there duplicate deals almost?
 # what does amount_usd_millions mean? is it the slice ($ amount) of the deal the FI is involved in? is it their profit?
   # why are there certain deals/observations with amounts == 0 
-  # even if opened into excel, there are some that are just small amounts, some are truly 0 
+  # even if opened in excel, there are some that are just small amounts, some are truly 0 
 # what does the underlying (deal data) data look like?
 
 # are these segment adjusted (e.g. income/value or whatever attributed to deforestation-related activities?)
+
+# DD data questions - if we want to pursue
 # how is the DD data created/derived/different from FF?
 # DD data - how were these variables constructed?
 # DD data - how are profits/income derived from shareholdings?
-  # maybe check the methodology
+  # maybe check the methodology document from ward/profundo
+# DD data - is there a data dictionary/metadata guide?
+
+
+### analysis ###
+# how does the UK compare to EU, US, China - aggregate over whole time
+# how has this changed over time - aggregate over time period, region
+# what kinds of financing are UK FIs involved in?
+# what sectors are they engaging in?
+
+# caveats of the data - how many companies/FIs are covered? is this a conservative estimate?
+
+
+
 ```
