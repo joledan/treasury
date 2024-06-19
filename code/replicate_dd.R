@@ -53,15 +53,13 @@ b <- df1 %>%
   summarise(amount = sum(per_investor_value_in_mln_us, na.rm = T),
             value = sum(value, na.rm = T))
   
-x <- df1 %>%
-  filter(investor_parent == "HSBC",
-         group == "Wilmar",
-         year == 2017) %>%
-  select(investor_parent, group, year, type_of_financing, 
-         total_income_us_mln, segment_adjuster, value, 
-         per_investor_value_in_mln_us, 
-         per_investor_value_in_mln_us_shareholdings_q4,
-         per_investor_value_in_mln_us_shareholdings_q4_2020) %>%
+x <- dd %>%
+  filter(investor_parent == "HSBC") %>%
+  # select(investor_parent, group, year, type_of_financing, 
+  #        total_income_us_mln, segment_adjuster, value, 
+  #        per_investor_value_in_mln_us, 
+  #        per_investor_value_in_mln_us_shareholdings_q4,
+  #        per_investor_value_in_mln_us_shareholdings_q4_2020) %>%
   mutate(income_seg = total_income_us_mln*segment_adjuster,
          value = per_investor_value_in_mln_us, 
          value_seg = per_investor_value_in_mln_us*segment_adjuster,
@@ -75,6 +73,18 @@ x <- df1 %>%
             total_value_q4 = sum(value_share_holdings_q4, na.rm = T),
             total_value_q4_2020 = sum(value_shareholdings_q4_2020, na.rm = T))
 
+z <- dd %>%
+  filter(investor_parent == "HSBC") %>%
+  mutate(income_seg = total_income_us_mln*segment_adjuster,
+         value = per_investor_value_in_mln_us, 
+         value_seg = per_investor_value_in_mln_us*segment_adjuster,
+         value_shareholdings_q4_2020 = per_investor_value_in_mln_us_shareholdings_q4_2020,
+         value_share_holdings_q4 = per_investor_value_in_mln_us_shareholdings_q4) %>%
+  summarise(total_income = sum(income_seg, na.rm = T),
+            total_value = sum(value, na.rm = T),
+            total_value_seg = sum(value_seg, na.rm = T),
+            total_value_q4 = sum(value_share_holdings_q4, na.rm = T),
+            total_value_q4_2020 = sum(value_shareholdings_q4_2020, na.rm = T))
 
 # to-do: how do we replicate the value figure in the document?
 # easily

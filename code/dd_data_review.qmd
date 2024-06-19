@@ -5,8 +5,8 @@ date-format: full
 format: html
 editor: visual
 project:
-  execute-dir: ../reports
-  output-dir: ../reports
+  execute-dir: "../reports"
+  output-dir: "../reports"
 ---
 
 # Purpose
@@ -43,6 +43,7 @@ library(readxl)
 library(ggplot2)
 library(magrittr)
 library(janitor)
+library(simplermarkdown)
 
 #### define paths ####
 user <- Sys.getenv("USERNAME")
@@ -81,46 +82,71 @@ There are `{r} n_vars` unique variables that appear in the data.
 Some identifying variables include:
 
 -   group = contains 20 unique agribusiness covered in the report
+
 -   year, maturity_date = year the deal was made and the date of maturity
+
 -   type_of_financing, type_short = type of financing that the agribusiness group/FI used, summarized into 4 categories as Loans, Shareholding, Bondholding, and Underwriting
+
     -   there are 6 types of financing: Bondholding, Corporate Loan, Revolving Credit Facility, Shareholding, Bond issuance, and Share issuance. These are the same 6 categories as in FF.
+
 -   deal_number_deal_id = presumably the unique identifier for the deal (which ideally should be found in Refinitiv, Bloomberg etc.)
+
 -   manager_name, investor_parent = the FIs involved in the deal
+
 -   group_sectors, group_regions = the sectors the agribusiness are involved in, as well as the geographic regions
+
     -   note, these appear to be the same as the FF data
 
 Some monetary/financial variables include:
 
-- principal_tranche_amount_in_mln_us = ??? 
-- total_package_amount_in_mln_us = ??? 
-- interest_rate_coupon = interest rate charged on the deal 
-- per_investor_value_in_mln_us = value of the deal for each FI involved (assumed, e.g. how much does HSBC specifically get from this deal) 
-- deal_fee_income_us_mln, deal_fee_ratio = the deal fee income received by each FI, the share of the per_investor_value_in_mln_us the FI charges to engage in the deal 
-  - deal_fee_income_us_mln = per_investor_value_in_mln_us x deal_fee_ratio 
-- loan_interest_income = income made from the interest on the loan 
-  - for financing with 1 year of maturity, loan_interest_income = per_investor_value_in_mln_us x interest_rate_coupon/100 
-    - but how do they compute this for the other deals with different maturity?
+-   principal_tranche_amount_in_mln_us = ???
+
+-   total_package_amount_in_mln_us = ???
+
+-   interest_rate_coupon = interest rate charged on the deal
+
+-   per_investor_value_in_mln_us = value of the deal for each FI involved (assumed definition, e.g. how much does HSBC specifically get from this deal)
+
+-   deal_fee_income_us_mln, deal_fee_ratio = the deal fee income received by each FI, the share of the per_investor_value_in_mln_us the FI charges to engage in the deal
+
+    -   deal_fee_income_us_mln = per_investor_value_in_mln_us x deal_fee_ratio
+
+-   loan_interest_income = income made from the interest on the loan
+
+    -   for financing with 1 year of maturity, loan_interest_income = per_investor_value_in_mln_us x interest_rate_coupon/100
+        -   but how do they compute this for the other deals with different maturity?
+
 -   total_income_us_mln = total income received by the FI from engaging in the deal
-  - total_income_us_mln = deal_fee_income_us_mln + loan_interest_income
-- segment_adjuster = an adjustment made by Profundo to capture only the deforestation-related activities that an agribusiness engages in 
-  - their methodology works through an example on how to construct this [can provide example]
-  - case-by-case basis depending on company reports and data availability
-- value = the total deforestation-adjusted value (maybe income is the more accurate word) of the deal to the FI
-  - value = total_income_us_mln x segment_adjuster
-  
-#### Key relationships in the data set 
 
-- total income made from the deal = money made from the deal fee + money made from the interest accruing on the loan
-  - total_income_us_mln = deal_fee_income_us_mln + loan_interest_income
-- total value (income) of the deal, adjusted to account for deforestation-related activities = segment adjuster (accounting for deforestation-related activites) multiplied by the total income made from the deal
-  - value = total_income_us_mln x segment_adjuster
+-   total_income_us_mln = deal_fee_income_us_mln + loan_interest_income
 
+-   segment_adjuster = an adjustment made by Profundo to capture only the deforestation-related activities that an agribusiness engages in
 
-Using these key relationships, we can replicate the values that appear in the visuals in the report.
+    -   their methodology works through an example on how to construct this \[can provide example\]
+    -   case-by-case basis depending on company reports and data availability
+
+-   value = the total deforestation-adjusted value (maybe income is the more accurate word) of the deal to the FI
+
+    -   value = total_income_us_mln x segment_adjuster
+
+#### Key relationships in the data set
+
+-   total income made from the deal = money made from the deal fee + money made from the interest accruing on the loan
+
+    -   **total_income_us_mln** = deal_fee_income_us_mln + loan_interest_income
+
+-   total value (income) of the deal, adjusted to account for deforestation-related activities = segment adjuster (accounting for deforestation-related activites) multiplied by the total income made from the deal
+
+    -   **value** = total_income_us_mln x segment_adjuster
+
+#### Replicating values in the DD report
+
+Using these key relationships, we can replicate the values that appear in the visuals in the report, where **total_income_millions** = the total of **total_income_us_mln** x **segment_adjuster**. These values correspond to the **Estimated proceeds (adjusted)** figure in the company specific plots. 
 
 ```{r}
 #| echo: false
 #| warnings: false
+#| output: asis
 
 companies <- c("HSBC", "BNP Paribas", "Rabobank", 
                "Deutsche Bank", "JPMorgan Chase", "Bank of China")
@@ -131,11 +157,106 @@ dd_repl1 <- dd %>%
   summarize(total_income_millions = sum(total_income, na.rm = T)) %>%
   filter(investor_parent %in% companies)
 
-head(dd_repl1)
+x <- dd %>%
+  filter(type_short == "Shareholding")
+cat(md_table(dd_repl1))
 ```
 
-#### to-do 
 
-- more relationships in data
-- questions on variables 
+To replicate the **Value of deals** figure in the company specific plots, we can sum the **per_investor_value_in_mln_us_shareholdings_q4_2020** variable that comes in the raw data. 
+```{r}
+#| echo: false
+#| warnings: false
+#| output: asis
 
+companies <- c("HSBC", "BNP Paribas", "Rabobank", 
+               "Deutsche Bank", "JPMorgan Chase", "Bank of China")
+# replicate the value of deals in the data
+dd_repl2 <- dd %>%
+  group_by(investor_parent) %>%
+  summarize(total_value = sum(per_investor_value_in_mln_us_shareholdings_q4_2020, na.rm = T)/1000) %>%
+  filter(investor_parent %in% companies)
+cat(md_table(dd_repl2))
+
+v <- dd %>% 
+  filter(investor_parent %in% companies) %>%
+  select(investor_parent, principal_tranche_amount_in_mln_us,
+         total_package_amount_in_mln_us,
+         per_investor_value_in_mln_us,
+         per_investor_value_in_mln_us_shareholdings_q4_2020)
+
+# 
+#   group_by(investor_parent) %>%
+#   summarize_at(c("principal_tranche_amount_in_mln_us",
+#                  "total_package_amount_in_mln_us",
+#                  "per_investor_value_in_mln_us",
+#                  "per_investor_value_in_mln_us_shareholdings_q4_2020"),
+#                sum,
+#                na.rm = T)
+
+  c <- dd %>%
+    filter(deal_number_deal_id == "3834659116")
+  # whats the difference between principal_tranche_amount_in_mln_us,
+  # total_package_amount_in_mln_us, per_investor_value_in_mln_us (and percentage_of_principal_tranche_amount)
+  # per_investor_value_in_mln_us_shareholdings_q4_2020
+  
+  # check tearsheet 3834659116 once u have access to refinitiv
+
+```
+
+
+``` {r}
+#| echo: false
+#| warnings: false
+#| output: asis
+#| include: false
+
+
+# check ff data 
+
+## ff data
+ff <- paste(dataraw,
+             "ForestsAndFinance Agriculture.csv",
+             sep = "/") %>%
+  read_delim() %>%
+  clean_names()
+
+# deal from Brookfield with JPMorgs, CitiGroup, Bank of China and ICBC (China)
+dd_deal <- dd %>%
+    filter(deal_number_deal_id == "3834659116") 
+
+# (probably the) same deal from FF data
+# example of 
+x <- ff %>%
+  filter(group == "Brookfield Asset Management",
+         year == "2019",
+         type == "Revolving credit facility",
+         country %in% c("China", "United States"))
+
+hsbc <- ff %>%
+  filter(bank == "HSBC") %>%
+  group_by(type) %>%
+  summarise(amount = sum(amount_usd_millions, na.rm=T))
+
+# who is investing where, what kinds, what industries
+```
+
+#### to-do
+
+-   more relationships in data
+  - what are the differences between "principal_tranche_amount_in_mln_us",
+                 "total_package_amount_in_mln_us",
+                 "per_investor_value_in_mln_us",
+                 "per_investor_value_in_mln_us_shareholdings_q4_2020"?
+  - how did they construct them?
+
+#### Remaining questions
+
+- How does this compare with FF data?
+
+- How are these variables constructed?
+  - e.g. per_investor_value_in_mln_us, total_package_amount_in_mln_us
+  
+- Could we replicate this analysis ourselves if we had the detailed methodology from Profundo or nah?
+  - Probably not - it seems like there's a lot of manual work/checking to do and it might take a while
+  
