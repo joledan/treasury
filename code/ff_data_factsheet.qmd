@@ -1,0 +1,85 @@
+---
+title: "ff_data_factsheet"
+format: html
+editor: visual
+---
+
+# Purpose
+
+This file goes through the Forests and Finance data to answer the following questions:
+
+- What is the UK financial sector's role in global deforestation?
+- How has the finance landscape changed over time among UK-based FIs in the past decade?
+- What prohibited commodities (i.e. soy, cocoa, beef and leather, and palm oil and derivative products) do UK FI investments contribute to?
+- What kinds of finance do UK FIs use to fund deforestation risk companies?
+
+
+```{r}
+#| echo: false
+#| warnings: false
+#| include: false
+
+##### install and load packages #####
+rm(list=ls())
+
+# load packages
+library(tidyverse)
+# extract currencies from string
+library(readxl)
+library(readr)
+library(ggplot2)
+library(magrittr)
+library(janitor)
+library(simplermarkdown)
+
+#### define paths ####
+user <- Sys.getenv("USERNAME")
+# specify project folder
+main <- paste0("C:/Users/", user, "/Documents/Github/treasury")
+dataraw <- paste(main, "dataraw", sep = "/")
+dataout <- paste(main, "dataout", sep = "/")
+temp <- paste(main, "temp", sep = "/")
+```
+
+```{r}
+#| echo: false
+#| warnings: false
+#| include: false
+
+# load ff data
+ff <- paste(dataraw,
+            "ForestsAndFinance Agriculture.csv",
+            sep = "/") %>%
+  read_delim() %>%
+  clean_names() %>%
+  mutate(type_short = case_when(
+    type %in% c("Bondholding", "Shareholding") ~ "Investment",
+    T ~ "Credit"
+  )) %>%
+  relocate(type_short, .after = type)
+# shareholding and bondholding == investment
+# all others == credit
+
+colnames(ff)
+
+# ff uk-headquartered only data
+ff_uk <- ff %>%
+  filter(country == "United Kingdom",
+         bank == "HSBC") %>%
+  group_by(type_short) %>%
+  summarise(total = sum(amount_usd_millions, na.rm = T))
+
+
+#### general questions/questions for ward ####
+# why are there duplicate deals almost?
+# what does amount_usd_millions mean? is it the slice ($ amount) of the deal the FI is involved in? is it their profit?
+  # why are there certain deals/observations with amounts == 0 
+  # even if opened into excel, there are some that are just small amounts, some are truly 0 
+# what does the underlying (deal data) data look like?
+
+# are these segment adjusted (e.g. income/value or whatever attributed to deforestation-related activities?)
+# how is the DD data created/derived/different from FF?
+# DD data - how were these variables constructed?
+# DD data - how are profits/income derived from shareholdings?
+  # maybe check the methodology
+```
