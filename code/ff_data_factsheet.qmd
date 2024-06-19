@@ -93,8 +93,15 @@ table(x$country)
 ### analysis ###
 # how does the UK compare to EU, US, China - aggregate over whole time
 # how has this changed over time - aggregate over time period, region
+# number of FIs/bad actors involved over time - has this changed? 
 # what kinds of financing are UK FIs involved in?
 # what sectors are they engaging in?
+# does geography matter?
+  # might be useful for scoping - e.g. looking at FI investments in deforestation related activities, then finding specific case studies
+# what household bank names are involved?
+
+
+# general q - what kind of values are we interested in discovering?
 
 # caveats of the data - how many companies/FIs are covered? is this a conservative estimate?
 
